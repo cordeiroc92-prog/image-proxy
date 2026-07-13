@@ -12,10 +12,11 @@ const ALLOWED_HOSTS = [
   "assets.aritzia.com",
   "images.asos-media.com",
   "n.nordstrommedia.com",
-  "images.revolveassets.com",
-  "images.urbndata.com",
-  "images.madewell.com",
-  "media.everlane.com",
+  "images.urbndata.com", // Free People / Anthropologie / Urban Outfitters
+  // Real domains confirmed by testing actual product image URLs:
+  "www.everlane.com",
+  "www.madewell.com",
+  "is4.revolveassets.com",
 ];
 
 export default async function handler(req, res) {
@@ -54,7 +55,9 @@ export default async function handler(req, res) {
 
     if (!upstreamResponse.ok) {
       res.status(502).send(
-        `Upstream fetch failed: ${upstreamResponse.status} ${upstreamResponse.statusText}.`
+        `Upstream fetch failed: ${upstreamResponse.status} ${upstreamResponse.statusText}. ` +
+        `If this repeats across platforms, the retailer's CDN may be blocking based on ` +
+        `something other than headers (e.g. broader bot/IP detection).`
       );
       return;
     }
