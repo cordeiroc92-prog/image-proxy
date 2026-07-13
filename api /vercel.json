@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/image-proxy.js": {
-      "runtime": "nodejs20.x"
-    }
-  }
-}
