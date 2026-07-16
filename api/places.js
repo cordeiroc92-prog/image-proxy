@@ -9,6 +9,10 @@
 
 export default async function handler(req, res) {
   const q = (req.query.q || "").trim();
+  // 'country' or 'city' — searching for a country with type=city returns
+  // cities that merely contain the word (e.g. "portugal" -> Portugalete, Spain)
+  // and omits the actual country, which is worse than useless.
+  const type = req.query.type === "country" ? "country" : "city";
 
   if (q.length < 2) {
     // Too short to be a useful search — don't waste an API call.
@@ -26,7 +30,7 @@ export default async function handler(req, res) {
     const url =
       "https://api.geoapify.com/v1/geocode/autocomplete" +
       `?text=${encodeURIComponent(q)}` +
-      "&type=city" +
+      `&type=${type}` +
       "&limit=6" +
       "&format=json" +
       `&apiKey=${key}`;
@@ -41,14 +45,26 @@ export default async function handler(req, res) {
 
     // Normalise to just what the app needs. Geoapify returns a lot of fields;
     // sending all of it would bloat every keystroke's response.
-    const results = (data.results || []).map((r) => ({
-      id: r.place_id,
-      name: r.city || r.name || r.address_line1,
-      country: r.country,
-      lat: r.lat,
-      lon: r.lon,
-      label: [r.city || r.name, r.state, r.country].filter(Boolean).join(", "),
-    }));
+    const results = (data.results || []).map((r) => {
+      if (type === "country") {
+        return {
+          id: r.place_id,
+          name: r.country,
+          country: r.country,
+          lat: r.lat,
+          lon: r.lon,
+          label: r.country,
+        };
+      }
+      return {
+        id: r.place_id,
+        name: r.city || r.name || r.address_line1,
+        country: r.country,
+        lat: r.lat,
+        lon: r.lon,
+        label: [r.city || r.name, r.state, r.country].filter(Boolean).join(", "),
+      };
+    });
 
     // Cache briefly — the same prefixes get typed constantly.
     res.setHeader("Cache-Control", "public, max-age=3600");
